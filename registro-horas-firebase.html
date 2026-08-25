@@ -387,7 +387,7 @@ function renderAuth(){
         ${!isLogin?`<div class="field"><label>Repetir contraseña</label><input type="password" id="authPass2" placeholder="••••••••" autocomplete="new-password"></div>`:''}
         <button class="primary" id="authSubmit">${isLogin?'Ingresar':'Crear cuenta'}</button>
       </div>
-      <footer class="note">Tus datos se guardan de forma segura en Firebase.<br>Usá una contraseña que no uses en otro lado.</footer>
+      <footer class="note">Tus datos se guardan de forma segura en Firebase.<br>Usá una contraseña que no uses en otro lado.<br><br>Desarrollado por <strong>Fernanda García</strong></footer>
     </div>
   `;
   document.getElementById('tabLogin').onclick=()=>setState({authTab:'login',authError:''});
@@ -492,7 +492,7 @@ function renderEmployee(){
         <p class="subtitle">Historial de horas que cargaste.</p>
         ${renderEntriesTable(state.entries,{allowDelete:true})}
       </div>
-      <footer class="note">Solo vos podés ver tus propios registros. El administrador puede ver los de todo el equipo.</footer>
+      <footer class="note">Solo vos podés ver tus propios registros. El administrador puede ver los de todo el equipo.<br><br>Desarrollado por <strong>Fernanda García</strong></footer>
     </div>
   `;
   document.getElementById('logoutBtn').onclick=handleLogout;
