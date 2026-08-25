@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Horas</title>
+<style>
+  :root{
+    --bg: #F3F1ED;
+    --panel: #FFFFFF;
+    --ink: #1F2A33;
+    --ink-soft: #5B6B73;
+    --line: #DCD7CC;
+    --petrol: #1E4D52;
+    --petrol-dark: #14373B;
+    --amber: #C97B2E;
+    --teal-soft: #4F8A8B;
+    --danger: #B3432D;
+    --radius: 10px;
+    font-family: 'Avenir Next', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--ink); min-height:100vh; -webkit-font-smoothing:antialiased; }
+  .wrap{ max-width:560px; margin:0 auto; padding:28px 18px 60px; }
+  .wrap.wide{ max-width:900px; }
+  header.app{ display:flex; align-items:center; justify-content:space-between; margin-bottom:22px; }
+  .brand{ display:flex; align-items:baseline; gap:10px; }
+  .brand .mark{ font-size:13px; letter-spacing:0.14em; text-transform:uppercase; color:var(--amber); font-weight:700; }
+  .brand h1{ font-size:19px; margin:0; font-weight:600; color:var(--petrol-dark); }
+  .who{ font-size:13px; color:var(--ink-soft); text-align:right; }
+  .who button{ background:none; border:none; color:var(--petrol); text-decoration:underline; cursor:pointer; font-size:13px; padding:2px 0; }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px; margin-bottom:20px; }
+  .card h2{ margin:0 0 4px; font-size:17px; color:var(--petrol-dark); }
+  .subtitle{ margin:0 0 20px; font-size:13px; color:var(--ink-soft); }
+  label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.03em; }
+  .field{ margin-bottom:16px; }
+  input[type=text],input[type=password],input[type=date],input[type=number],input[type=time],textarea,select{
+    width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:8px; font-size:15px; color:var(--ink); background:#FCFBF9; font-family:inherit;
+  }
+  textarea{ resize:vertical; min-height:70px; }
+  input:focus,textarea:focus,select:focus{ outline:none; border-color:var(--petrol); box-shadow:0 0 0 3px rgba(30,77,82,0.12); }
+  .type-toggle{ display:flex; gap:10px; }
+  .type-toggle label.opt{ flex:1; text-transform:none; font-weight:500; font-size:14px; border:1px solid var(--line); border-radius:8px; padding:12px; text-align:center; cursor:pointer; color:var(--ink-soft); background:#FCFBF9; transition:all .12s ease; }
+  .type-toggle input{ display:none; }
+  .type-toggle label.opt.extra.active{ border-color:var(--amber); color:var(--amber); background:#FBF0E2; }
+  .type-toggle label.opt.presencia.active{ border-color:var(--teal-soft); color:var(--teal-soft); background:#EAF3F2; }
+  button.primary{ width:100%; padding:13px; background:var(--petrol); color:#fff; border:none; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; transition:background .12s ease; }
+  button.primary:hover{ background:var(--petrol-dark); }
+  button.primary:disabled{ background:#A9B3AE; cursor:not-allowed; }
+  button.secondary{ width:100%; padding:11px; background:transparent; color:var(--petrol); border:1px solid var(--line); border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; margin-top:10px; }
+  .error{ background:#FBEAE5; border:1px solid #E3B6A6; color:var(--danger); padding:10px 12px; border-radius:8px; font-size:13.5px; margin-bottom:16px; }
+  .success{ background:#EAF3EA; border:1px solid #B9D6B9; color:#2E5C2E; padding:10px 12px; border-radius:8px; font-size:13.5px; margin-bottom:16px; }
+  .auth-tabs{ display:flex; gap:6px; margin-bottom:20px; background:#ECE8E0; border-radius:8px; padding:4px; }
+  .auth-tabs button{ flex:1; padding:9px; border:none; background:transparent; border-radius:6px; font-size:13.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; }
+  .auth-tabs button.active{ background:#fff; color:var(--petrol-dark); box-shadow:0 1px 2px rgba(0,0,0,0.08); }
+  .admin-tabs{ display:flex; gap:6px; margin-bottom:20px; background:#ECE8E0; border-radius:8px; padding:4px; flex-wrap:wrap; }
+  .admin-tab{ flex:1; min-width:120px; padding:10px 8px; border:none; background:transparent; border-radius:6px; font-size:13.5px; font-weight:600; color:var(--ink-soft); cursor:pointer; }
+  .admin-tab.active{ background:#fff; color:var(--petrol-dark); box-shadow:0 1px 2px rgba(0,0,0,0.08); }
+  table.log{ width:100%; border-collapse:collapse; font-size:13.5px; }
+  table.log th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.04em; color:var(--ink-soft); border-bottom:1px solid var(--line); padding:8px 6px; }
+  table.log td{ padding:10px 6px; border-bottom:1px solid #EEEAE2; vertical-align:top; }
+  .badge{ display:inline-block; padding:2px 9px; border-radius:99px; font-size:11.5px; font-weight:700; }
+  .badge.extra{ background:#FBF0E2; color:var(--amber); }
+  .badge.presencia{ background:#EAF3F2; color:var(--teal-soft); }
+  .empty{ text-align:center; padding:30px 10px; color:var(--ink-soft); font-size:14px; }
+  .stat-row{ display:flex; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+  .stat{ flex:1; min-width:110px; background:#FCFBF9; border:1px solid var(--line); border-radius:8px; padding:12px 14px; }
+  .stat .n{ font-size:22px; font-weight:700; color:var(--petrol-dark); }
+  .stat .l{ font-size:11.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:0.03em; }
+  .del-btn{ background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:12px; text-decoration:underline; }
+  .del-btn:hover{ color:var(--danger); }
+  .filter-bar{ background:#F7F5F0; border:1px solid var(--line); border-radius:10px; padding:16px 18px; margin-bottom:18px; display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end; }
+  .filter-bar .filter-field{ flex:1; min-width:160px; margin-bottom:0; }
+  .filter-bar label{ font-size:11px; margin-bottom:5px; }
+  .filter-bar input{ padding:9px 10px; font-size:14px; }
+  .filter-bar .filter-actions{ display:flex; gap:8px; align-items:flex-end; flex-shrink:0; }
+  .btn-filter-apply{ padding:9px 18px; background:var(--petrol); color:#fff; border:none; border-radius:8px; font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .btn-filter-apply:hover{ background:var(--petrol-dark); }
+  .btn-filter-clear{ padding:9px 14px; background:transparent; color:var(--ink-soft); border:1px solid var(--line); border-radius:8px; font-size:13.5px; font-weight:600; cursor:pointer; white-space:nowrap; }
+  .filter-summary{ font-size:12.5px; color:var(--teal-soft); font-weight:600; margin-bottom:10px; }
+  footer.note{ text-align:center; font-size:12px; color:var(--ink-soft); margin-top:30px; line-height:1.6; }
+  .loading{ text-align:center; padding:60px 20px; color:var(--ink-soft); }
+  @media(max-width:480px){
+    table.log{ font-size:12.5px; }
+    table.log th:nth-child(3),table.log td:nth-child(3){ display:none; }
+    .filter-bar{ flex-direction:column; }
+    .filter-bar .filter-field{ min-width:unset; width:100%; }
+    .filter-bar .filter-actions{ width:100%; }
+    .btn-filter-apply,.btn-filter-clear{ flex:1; }
+  }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, getDocs, query, where, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAFuSTYwGyK_YYPMYi_lBBu5R7BYInh9X8",
+  authDomain: "horas-extras-f97e9.firebaseapp.com",
+  projectId: "horas-extras-f97e9",
+  storageBucket: "horas-extras-f97e9.firebasestorage.app",
+  messagingSenderId: "160981726105",
+  appId: "1:160981726105:web:9fc493f1bccdeec7439908"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const USERS_COL = 'horas-usuarios';
+const ENTRIES_COL = 'horas-registros';
+
+// hash simple
+async function hashPass(pass){
+  const enc = new TextEncoder().encode(pass + '::horas-extra-salt');
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+const root = document.getElementById('root');
+let state = {
+  loading: true,
+  user: null,
+  authTab: 'login',
+  authError: '',
+  formError: '',
+  formSuccess: '',
+  type: 'extra',
+  entries: [],
+  saving: false,
+  adminSection: 'inicio',
+  empError: '',
+  empSuccess: '',
+  confirmingDelete: null,
+  confirmingRemove: null,
+  exporting: false,
+  filterNombre: '',
+  filterDesde: '',
+  filterHasta: '',
+  allEntries: [],
+  allUsers: [],
+};
+
+// sesión en memoria
+let memSession = null;
+
+function setState(patch){ state = Object.assign({}, state, patch); render(); }
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=String(s||''); return d.innerHTML; }
+function fmtDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
+function calcHoras(inicio,fin){
+  if(!inicio||!fin) return null;
+  const [hi,mi]=inicio.split(':').map(Number);
+  const [hf,mf]=fin.split(':').map(Number);
+  let mins=(hf*60+mf)-(hi*60+mi);
+  if(mins<=0) mins+=24*60;
+  return Math.round((mins/60)*100)/100;
+}
+
+// ---------- Firestore helpers ----------
+async function fsGetUser(username){
+  try{ const s=await getDoc(doc(db,USERS_COL,username)); return s.exists()?s.data():null; }
+  catch(e){ console.warn('fsGetUser',e); return null; }
+}
+async function fsSetUser(username,data){ await setDoc(doc(db,USERS_COL,username),data,{merge:true}); }
+async function fsDeleteUser(username){ try{ await deleteDoc(doc(db,USERS_COL,username)); }catch(e){} }
+
+async function fsGetEntries(username){
+  try{
+    const q=query(collection(db,ENTRIES_COL),where('username','==',username),orderBy('fecha','desc'));
+    const s=await getDocs(q);
+    return s.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){ console.warn('fsGetEntries',e); return []; }
+}
+async function fsGetAllEntries(){
+  try{
+    const q=query(collection(db,ENTRIES_COL),orderBy('fecha','desc'));
+    const s=await getDocs(q);
+    return s.docs.map(d=>({id:d.id,...d.data()}));
+  }catch(e){ console.warn('fsGetAllEntries',e); return []; }
+}
+async function fsGetAllUsers(){
+  try{
+    const s=await getDocs(collection(db,USERS_COL));
+    return s.docs.map(d=>({username:d.id,...d.data()}));
+  }catch(e){ console.warn('fsGetAllUsers',e); return []; }
+}
+async function fsSaveEntry(entryId,entry){ await setDoc(doc(db,ENTRIES_COL,entryId),entry); }
+async function fsDeleteEntry(id){ await deleteDoc(doc(db,ENTRIES_COL,id)); }
+async function fsDeleteEntriesOf(username){
+  const entries=await fsGetEntries(username);
+  for(const e of entries){ try{ await fsDeleteEntry(e.id); }catch(ex){} }
+}
+
+// ---------- Init ----------
+async function init(){
+  if(memSession){
+    const profile=await fsGetUser(memSession);
+    if(profile){
+      state.user={username:memSession,isAdmin:!!profile.isAdmin};
+      state.entries=await fsGetEntries(memSession);
+    }
+  }
+  state.loading=false;
+  render();
+}
+
+// ---------- Auth ----------
+async function handleRegister(username,pass,pass2){
+  username=username.trim();
+  if(!username||!pass){ setState({authError:'Completá nombre de usuario y contraseña.'}); return; }
+  if(pass.length<4){ setState({authError:'La contraseña debe tener al menos 4 caracteres.'}); return; }
+  if(pass!==pass2){ setState({authError:'Las contraseñas no coinciden.'}); return; }
+  const existing=await fsGetUser(username);
+  if(existing){ setState({authError:'Ese nombre de usuario ya existe. Probá iniciar sesión.'}); return; }
+  const hash=await hashPass(pass);
+  const isAdmin=username.toLowerCase()==='admin';
+  await fsSetUser(username,{passHash:hash,isAdmin,creadoEl:new Date().toISOString()});
+  memSession=username;
+  state.user={username,isAdmin};
+  state.entries=[];
+  state.authError='';
+  render();
+}
+
+async function handleLogin(username,pass){
+  username=username.trim();
+  if(!username||!pass){ setState({authError:'Completá usuario y contraseña.'}); return; }
+  const rec=await fsGetUser(username);
+  if(!rec){ setState({authError:'No existe ese usuario. Registrate primero.'}); return; }
+  const hash=await hashPass(pass);
+  if(hash!==rec.passHash){ setState({authError:'Contraseña incorrecta.'}); return; }
+  memSession=username;
+  state.user={username,isAdmin:!!rec.isAdmin};
+  state.entries=await fsGetEntries(username);
+  state.authError='';
+  render();
+}
+
+function handleLogout(){
+  memSession=null;
+  state.user=null;
+  state.entries=[];
+  state.allEntries=[];
+  state.allUsers=[];
+  state.adminSection='inicio';
+  state.filterNombre='';
+  state.filterDesde='';
+  state.filterHasta='';
+  render();
+}
+
+// ---------- Registro de horas ----------
+async function handleSaveEntry(data){
+  setState({saving:true,formError:'',formSuccess:''});
+  if(!data.fecha||!data.horas||!data.detalle){ setState({saving:false,formError:'Completá todos los campos antes de guardar.'}); return; }
+  const horasNum=parseFloat(data.horas);
+  if(isNaN(horasNum)||horasNum<=0){ setState({saving:false,formError:'La cantidad de horas debe ser un número mayor a 0.'}); return; }
+  const entryId='e_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);
+  const entry={
+    username:state.user.username,
+    fecha:data.fecha,
+    horaInicio:data.horaInicio||'',
+    horaFin:data.horaFin||'',
+    horas:horasNum,
+    detalle:data.detalle.trim(),
+    tipo:data.tipo,
+    registradoEl:new Date().toISOString()
+  };
+  try{
+    await fsSaveEntry(entryId,entry);
+    const newEntries=[{id:entryId,...entry},...state.entries];
+    setState({saving:false,entries:newEntries,formSuccess:'Registro guardado correctamente.',formError:''});
+    setTimeout(()=>setState({formSuccess:''}),3000);
+  }catch(e){
+    setState({saving:false,formError:'No se pudo guardar. Revisá tu conexión.'});
+  }
+}
+
+async function handleDeleteEntry(id){
+  try{
+    await fsDeleteEntry(id);
+    state.entries=state.entries.filter(e=>e.id!==id);
+    state.allEntries=state.allEntries.filter(e=>e.id!==id);
+    state.confirmingDelete=null;
+    render();
+  }catch(e){ console.warn('handleDeleteEntry',e); }
+}
+
+// ---------- Admin ----------
+async function loadAdminData(){
+  const [users,entries]=await Promise.all([fsGetAllUsers(),fsGetAllEntries()]);
+  state.allUsers=users.filter(u=>u.username!==state.user.username);
+  state.allEntries=entries;
+}
+
+async function handleAddEmployee(username,pass){
+  username=(username||'').trim();
+  if(!username||!pass){ setState({empError:'Completá nombre de usuario y contraseña.'}); return; }
+  if(pass.length<4){ setState({empError:'La contraseña debe tener al menos 4 caracteres.'}); return; }
+  if(username.toLowerCase()==='admin'){ setState({empError:'Ese nombre está reservado para el administrador.'}); return; }
+  const existing=await fsGetUser(username);
+  if(existing){ setState({empError:'Ya existe un empleado con ese nombre de usuario.'}); return; }
+  const hash=await hashPass(pass);
+  await fsSetUser(username,{passHash:hash,isAdmin:false,creadoEl:new Date().toISOString()});
+  setState({empError:'',empSuccess:`Empleado "${username}" creado correctamente.`});
+  await loadAdminData();
+  renderAdminView();
+}
+
+async function handleRemoveEmployee(username){
+  await fsDeleteEntriesOf(username);
+  await fsDeleteUser(username);
+  state.confirmingRemove=null;
+  setState({empSuccess:`Empleado "${username}" eliminado.`,empError:''});
+  await loadAdminData();
+  renderAdminView();
+}
+
+async function handleExportExcel(){
+  setState({exporting:true});
+  const entries=await fsGetAllEntries();
+  const rows=entries.map(e=>({
+    'Empleado':e.username||'',
+    'Fecha':e.fecha,
+    'Hora inicio':e.horaInicio||'',
+    'Hora fin':e.horaFin||'',
+    'Horas':e.horas,
+    'Tipo':e.tipo==='extra'?'Hora extra':'Presencia',
+    'Detalle del trabajo':e.detalle,
+    'Registrado el':new Date(e.registradoEl).toLocaleString('es-AR')
+  }));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:18},{wch:12},{wch:10},{wch:10},{wch:8},{wch:12},{wch:50},{wch:20}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Registro de horas');
+  XLSX.writeFile(wb,'registro-horas-'+new Date().toISOString().slice(0,10)+'.xlsx');
+  setState({exporting:false});
+}
+
+// ---------- Filtros ----------
+function applyFilters(entries){
+  let r=entries||[];
+  const n=(state.filterNombre||'').trim().toLowerCase();
+  const d=state.filterDesde||'';
+  const h=state.filterHasta||'';
+  if(n) r=r.filter(e=>(e.username||'').toLowerCase().includes(n));
+  if(d) r=r.filter(e=>e.fecha>=d);
+  if(h) r=r.filter(e=>e.fecha<=h);
+  return r;
+}
+function hasActiveFilters(){ return !!(state.filterNombre||state.filterDesde||state.filterHasta); }
+function filterSummaryText(filtered,total){
+  if(!hasActiveFilters()) return '';
+  const parts=[];
+  if(state.filterNombre) parts.push(`nombre: "<strong>${escapeHtml(state.filterNombre)}</strong>"`);
+  if(state.filterDesde) parts.push(`desde: <strong>${fmtDate(state.filterDesde)}</strong>`);
+  if(state.filterHasta) parts.push(`hasta: <strong>${fmtDate(state.filterHasta)}</strong>`);
+  return `Filtro activo — ${parts.join(', ')} · Mostrando <strong>${filtered}</strong> de <strong>${total}</strong> registros`;
+}
+
+// ---------- Render ----------
+function render(){
+  if(state.loading){ root.innerHTML='<div class="wrap"><div class="loading">Cargando…</div></div>'; return; }
+  if(!state.user){ renderAuth(); return; }
+  if(state.user.isAdmin){ renderAdminShell(); } else { renderEmployee(); }
+}
+
+function renderAuth(){
+  const isLogin=state.authTab==='login';
+  root.innerHTML=`
+    <div class="wrap">
+      <header class="app">
+        <div class="brand"><span class="mark">RH</span><h1>Registro de Horas</h1></div>
+      </header>
+      <div class="card">
+        <h2>${isLogin?'Iniciar sesión':'Crear cuenta'}</h2>
+        <p class="subtitle">${isLogin?'Ingresá con tu nombre de usuario y contraseña.':'Elegí un nombre de usuario y contraseña.'}</p>
+        <div class="auth-tabs">
+          <button id="tabLogin" class="${isLogin?'active':''}">Iniciar sesión</button>
+          <button id="tabRegister" class="${!isLogin?'active':''}">Crear cuenta</button>
+        </div>
+        ${state.authError?`<div class="error">${escapeHtml(state.authError)}</div>`:''}
+        <div class="field"><label>Nombre de usuario</label><input type="text" id="authUser" placeholder="ej: jperez" autocomplete="username"></div>
+        <div class="field"><label>Contraseña</label><input type="password" id="authPass" placeholder="••••••••" autocomplete="${isLogin?'current-password':'new-password'}"></div>
+        ${!isLogin?`<div class="field"><label>Repetir contraseña</label><input type="password" id="authPass2" placeholder="••••••••" autocomplete="new-password"></div>`:''}
+        <button class="primary" id="authSubmit">${isLogin?'Ingresar':'Crear cuenta'}</button>
+      </div>
+      <footer class="note">Tus datos se guardan de forma segura en Firebase.<br>Usá una contraseña que no uses en otro lado.</footer>
+    </div>
+  `;
+  document.getElementById('tabLogin').onclick=()=>setState({authTab:'login',authError:''});
+  document.getElementById('tabRegister').onclick=()=>setState({authTab:'register',authError:''});
+  document.getElementById('authSubmit').onclick=()=>{
+    const u=document.getElementById('authUser').value;
+    const p=document.getElementById('authPass').value;
+    if(isLogin){ handleLogin(u,p); }
+    else{ handleRegister(u,p,document.getElementById('authPass2').value); }
+  };
+  root.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('authSubmit').click(); });
+  });
+}
+
+function renderEntryForm(){
+  return `
+    <div class="card">
+      <h2>Nuevo registro</h2>
+      <p class="subtitle">Completá los datos de las horas trabajadas.</p>
+      ${state.formError?`<div class="error">${escapeHtml(state.formError)}</div>`:''}
+      ${state.formSuccess?`<div class="success">${escapeHtml(state.formSuccess)}</div>`:''}
+      <div class="field"><label>Fecha</label><input type="date" id="fFecha"></div>
+      <div class="field" style="display:flex;gap:12px;">
+        <div style="flex:1;"><label>Hora inicio</label><input type="time" id="fHoraInicio"></div>
+        <div style="flex:1;"><label>Hora fin</label><input type="time" id="fHoraFin"></div>
+      </div>
+      <div class="field"><label>Cantidad de horas</label><input type="number" id="fHoras" min="0.5" step="0.25" placeholder="ej: 3, o se calcula con hora inicio y fin"></div>
+      <div class="field">
+        <label>Tipo de hora</label>
+        <div class="type-toggle">
+          <label class="opt extra ${state.type==='extra'?'active':''}"><input type="radio" name="tipo" value="extra" ${state.type==='extra'?'checked':''}><span>Hora extra</span></label>
+          <label class="opt presencia ${state.type==='presencia'?'active':''}"><input type="radio" name="tipo" value="presencia" ${state.type==='presencia'?'checked':''}><span>Presencia</span></label>
+        </div>
+      </div>
+      <div class="field"><label>Detalle del trabajo</label><textarea id="fDetalle" placeholder="Describí brevemente la tarea realizada"></textarea></div>
+      <button class="primary" id="fSubmit" ${state.saving?'disabled':''}>${state.saving?'Guardando…':'Guardar registro'}</button>
+    </div>
+  `;
+}
+
+function bindEntryForm(){
+  const ini=document.getElementById('fHoraInicio');
+  const fin=document.getElementById('fHoraFin');
+  const hrs=document.getElementById('fHoras');
+  function autoCalc(){ const h=calcHoras(ini.value,fin.value); if(h!==null) hrs.value=h; }
+  ini.addEventListener('change',autoCalc);
+  fin.addEventListener('change',autoCalc);
+  root.querySelectorAll('input[name=tipo]').forEach(r=>r.addEventListener('change',()=>setState({type:r.value})));
+  document.getElementById('fSubmit').onclick=()=>{
+    handleSaveEntry({ fecha:document.getElementById('fFecha').value, horaInicio:ini.value, horaFin:fin.value, horas:hrs.value, detalle:document.getElementById('fDetalle').value, tipo:state.type });
+  };
+}
+
+function renderEntriesTable(entries,opts){
+  opts=opts||{};
+  if(!entries||entries.length===0) return `<div class="empty">Todavía no hay registros.</div>`;
+  const totalExtra=entries.filter(e=>e.tipo==='extra').reduce((s,e)=>s+e.horas,0);
+  const totalPres=entries.filter(e=>e.tipo==='presencia').reduce((s,e)=>s+e.horas,0);
+  const rows=entries.map(e=>`
+    <tr>
+      ${opts.showOwner?`<td>${escapeHtml(e.username||'')}</td>`:''}
+      <td>${fmtDate(e.fecha)}</td>
+      <td>${e.horas}h${(e.horaInicio&&e.horaFin)?`<br><span style="color:var(--ink-soft);font-size:11.5px;">${e.horaInicio}–${e.horaFin}</span>`:''}</td>
+      <td>${escapeHtml(e.detalle)}</td>
+      <td><span class="badge ${e.tipo}">${e.tipo==='extra'?'Extra':'Presencia'}</span></td>
+      ${opts.allowDelete?`<td>${state.confirmingDelete===e.id
+        ?`<button class="confirm-del-yes" data-id="${e.id}" style="color:var(--danger);font-weight:700;background:none;border:none;cursor:pointer;font-size:12px;text-decoration:underline;">Sí, borrar</button> <button class="confirm-del-no" style="background:none;border:none;color:var(--ink-soft);cursor:pointer;font-size:12px;text-decoration:underline;">Cancelar</button>`
+        :`<button class="del-btn" data-id="${e.id}">Borrar</button>`
+      }</td>`:''}
+    </tr>
+  `).join('');
+  return `
+    <div class="stat-row">
+      <div class="stat"><div class="n">${totalExtra}h</div><div class="l">Horas extra</div></div>
+      <div class="stat"><div class="n">${totalPres}h</div><div class="l">Presencia</div></div>
+      <div class="stat"><div class="n">${entries.length}</div><div class="l">Registros</div></div>
+    </div>
+    <table class="log">
+      <thead><tr>${opts.showOwner?'<th>Empleado</th>':''}<th>Fecha</th><th>Horas</th><th>Detalle</th><th>Tipo</th>${opts.allowDelete?'<th></th>':''}</tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function bindDeleteButtons(){
+  root.querySelectorAll('.del-btn:not(.remove-emp-btn)').forEach(btn=>{ btn.onclick=()=>setState({confirmingDelete:btn.dataset.id}); });
+  root.querySelectorAll('.confirm-del-yes').forEach(btn=>{ btn.onclick=()=>handleDeleteEntry(btn.dataset.id); });
+  root.querySelectorAll('.confirm-del-no').forEach(btn=>{ btn.onclick=()=>setState({confirmingDelete:null}); });
+}
+
+function renderEmployee(){
+  root.innerHTML=`
+    <div class="wrap">
+      <header class="app">
+        <div class="brand"><span class="mark">RH</span><h1>Registro de Horas</h1></div>
+        <div class="who">${escapeHtml(state.user.username)}<br><button id="logoutBtn">Cerrar sesión</button></div>
+      </header>
+      ${renderEntryForm()}
+      <div class="card">
+        <h2>Mis registros</h2>
+        <p class="subtitle">Historial de horas que cargaste.</p>
+        ${renderEntriesTable(state.entries,{allowDelete:true})}
+      </div>
+      <footer class="note">Solo vos podés ver tus propios registros. El administrador puede ver los de todo el equipo.</footer>
+    </div>
+  `;
+  document.getElementById('logoutBtn').onclick=handleLogout;
+  bindEntryForm();
+  bindDeleteButtons();
+}
+
+async function renderAdminShell(){
+  root.innerHTML=`<div class="wrap wide"><div class="loading">Cargando equipo…</div></div>`;
+  await loadAdminData();
+  renderAdminView();
+}
+
+function renderFilterBar(){
+  const nombres=[...new Set((state.allEntries||[]).map(e=>e.username||''))].filter(Boolean).sort();
+  return `
+    <div class="filter-bar">
+      <div class="filter-field">
+        <label>Buscar por nombre</label>
+        <input type="text" id="filterNombre" value="${escapeHtml(state.filterNombre)}" placeholder="ej: jperez" list="nombresList" autocomplete="off">
+        <datalist id="nombresList">${nombres.map(n=>`<option value="${escapeHtml(n)}">`).join('')}</datalist>
+      </div>
+      <div class="filter-field">
+        <label>Desde</label>
+        <input type="date" id="filterDesde" value="${escapeHtml(state.filterDesde)}">
+      </div>
+      <div class="filter-field">
+        <label>Hasta</label>
+        <input type="date" id="filterHasta" value="${escapeHtml(state.filterHasta)}">
+      </div>
+      <div class="filter-actions">
+        <button class="btn-filter-apply" id="btnFiltrar">Filtrar</button>
+        ${hasActiveFilters()?`<button class="btn-filter-clear" id="btnLimpiar">Limpiar</button>`:''}
+      </div>
+    </div>
+  `;
+}
+
+function renderAdminView(){
+  const section=state.adminSection||'inicio';
+  const baseEntries=state.allEntries||[];
+  const filteredEntries=applyFilters(baseEntries);
+  const users=state.allUsers||[];
+
+  root.innerHTML=`
+    <div class="wrap wide">
+      <header class="app">
+        <div class="brand"><span class="mark">RH · Admin</span><h1>Registro de Horas</h1></div>
+        <div class="who">${escapeHtml(state.user.username)} (admin)<br><button id="logoutBtn">Cerrar sesión</button></div>
+      </header>
+      <div class="admin-tabs">
+        <button class="admin-tab ${section==='inicio'?'active':''}" data-section="inicio">Cargar horas</button>
+        <button class="admin-tab ${section==='empleados'?'active':''}" data-section="empleados">Empleados</button>
+        <button class="admin-tab ${section==='registros'?'active':''}" data-section="registros">Registros del equipo</button>
+      </div>
+
+      ${section==='inicio'?`
+        ${renderEntryForm()}
+        <div class="card">
+          <h2>Mis propios registros</h2>
+          ${renderEntriesTable(state.entries,{allowDelete:true})}
+        </div>
+      `:''}
+
+      ${section==='empleados'?`
+        <div class="card">
+          <h2>Empleados</h2>
+          <p class="subtitle">Agregá empleados con nombre de usuario y contraseña inicial.</p>
+          ${state.empError?`<div class="error">${escapeHtml(state.empError)}</div>`:''}
+          ${state.empSuccess?`<div class="success">${escapeHtml(state.empSuccess)}</div>`:''}
+          <div class="field"><label>Nombre de usuario</label><input type="text" id="newEmpUser" placeholder="ej: mlopez"></div>
+          <div class="field"><label>Contraseña inicial</label><input type="password" id="newEmpPass" placeholder="mínimo 4 caracteres"></div>
+          <button class="primary" id="addEmpBtn">Agregar empleado</button>
+          ${users.length>0?`
+            <div style="margin-top:22px;">
+              <label style="margin-bottom:10px;">Empleados actuales</label>
+              ${users.map(u=>`
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #EEEAE2;">
+                  <span>${escapeHtml(u.username)}</span>
+                  ${state.confirmingRemove===u.username?`
+                    <span>
+                      <span style="font-size:12.5px;color:var(--danger);margin-right:8px;">¿Seguro? Se borran sus registros.</span>
+                      <button class="del-btn remove-emp-btn" data-remove-user="${escapeHtml(u.username)}" style="color:var(--danger);font-weight:700;">Sí, quitar</button>
+                      <button class="cancel-remove-btn" style="margin-left:8px;background:none;border:none;color:var(--ink-soft);text-decoration:underline;cursor:pointer;font-size:12px;">Cancelar</button>
+                    </span>
+                  `:`<button class="del-btn remove-emp-btn" data-remove-user="${escapeHtml(u.username)}">Quitar empleado</button>`}
+                </div>
+              `).join('')}
+            </div>
+          `:''}
+        </div>
+      `:''}
+
+      ${section==='registros'?`
+        <div class="card">
+          <h2>Todo lo que fue cargando el equipo</h2>
+          <p class="subtitle">Filtrá por nombre o por rango de fechas, o exportá todo a Excel.</p>
+          ${renderFilterBar()}
+          ${hasActiveFilters()?`<div class="filter-summary">${filterSummaryText(filteredEntries.length,baseEntries.length)}</div>`:''}
+          <button class="secondary" id="exportBtn" ${state.exporting?'disabled':''}>${state.exporting?'Generando archivo…':'Exportar todos los registros a Excel'}</button>
+          <div style="margin-top:18px;">${renderEntriesTable(filteredEntries,{allowDelete:true,showOwner:true})}</div>
+        </div>
+      `:''}
+    </div>
+  `;
+
+  document.getElementById('logoutBtn').onclick=handleLogout;
+  root.querySelectorAll('.admin-tab').forEach(btn=>{
+    btn.onclick=async()=>{
+      state.adminSection=btn.dataset.section;
+      state.confirmingRemove=null;
+      state.confirmingDelete=null;
+      if(btn.dataset.section==='registros'||btn.dataset.section==='empleados') await loadAdminData();
+      renderAdminView();
+    };
+  });
+
+  if(section==='inicio'){ bindEntryForm(); bindDeleteButtons(); }
+
+  if(section==='empleados'){
+    document.getElementById('addEmpBtn').onclick=()=>{
+      handleAddEmployee(document.getElementById('newEmpUser').value, document.getElementById('newEmpPass').value);
+    };
+    root.querySelectorAll('[data-remove-user]').forEach(btn=>{
+      btn.onclick=()=>{
+        const u=btn.dataset.removeUser;
+        if(state.confirmingRemove===u){ handleRemoveEmployee(u); }
+        else{ setState({confirmingRemove:u}); }
+      };
+    });
+    root.querySelectorAll('.cancel-remove-btn').forEach(btn=>{ btn.onclick=()=>setState({confirmingRemove:null}); });
+  }
+
+  if(section==='registros'){
+    document.getElementById('exportBtn').onclick=handleExportExcel;
+    document.getElementById('btnFiltrar').onclick=()=>{
+      setState({ filterNombre:(document.getElementById('filterNombre').value||'').trim(), filterDesde:document.getElementById('filterDesde').value||'', filterHasta:document.getElementById('filterHasta').value||'', confirmingDelete:null });
+    };
+    const bl=document.getElementById('btnLimpiar');
+    if(bl) bl.onclick=()=>setState({filterNombre:'',filterDesde:'',filterHasta:'',confirmingDelete:null});
+    ['filterNombre','filterDesde','filterHasta'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('btnFiltrar').click(); });
+    });
+    bindDeleteButtons();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
