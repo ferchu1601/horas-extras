@@ -168,9 +168,11 @@ async function fsDeleteUser(username){ try{ await deleteDoc(doc(db,USERS_COL,use
 
 async function fsGetEntries(username){
   try{
-    const q=query(collection(db,ENTRIES_COL),where('username','==',username),orderBy('fecha','desc'));
+    const q=query(collection(db,ENTRIES_COL),where('username','==',username));
     const s=await getDocs(q);
-    return s.docs.map(d=>({id:d.id,...d.data()}));
+    const entries=s.docs.map(d=>({id:d.id,...d.data()}));
+    entries.sort((a,b)=> a.fecha < b.fecha ? 1 : (a.fecha > b.fecha ? -1 : 0));
+    return entries;
   }catch(e){ console.warn('fsGetEntries',e); return []; }
 }
 async function fsGetAllEntries(){
