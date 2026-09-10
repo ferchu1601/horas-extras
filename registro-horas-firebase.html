@@ -135,6 +135,9 @@ let state = {
   empSuccess: '',
   confirmingDelete: null,
   confirmingRemove: null,
+  confirmingReset: null,
+  resetError: '',
+  resetSuccess: '',
   exporting: false,
   filterNombre: '',
   filterDesde: '',
@@ -309,6 +312,19 @@ async function handleAddEmployee(username,pass){
   setState({empError:'',empSuccess:`Empleado "${username}" creado correctamente.`});
   await loadAdminData();
   renderAdminView();
+}
+
+async function handleResetPassword(username, newPass){
+  if(!newPass || newPass.length < 4){
+    setState({resetError: 'La contraseña debe tener al menos 4 caracteres.', resetSuccess: ''});
+    return;
+  }
+  const hash = await hashPass(newPass);
+  const rec = await fsGetUser(username);
+  if(!rec){ setState({resetError: 'No se encontró el usuario.', resetSuccess: ''}); return; }
+  await fsSetUser(username, Object.assign({}, rec, {passHash: hash}));
+  setState({confirmingReset: null, resetError: '', resetSuccess: `Contraseña de "${username}" actualizada correctamente.`});
+  setTimeout(()=>setState({resetSuccess:''}), 3000);
 }
 
 async function handleRemoveEmployee(username){
@@ -580,7 +596,11 @@ function renderAdminView(){
                       <button class="del-btn remove-emp-btn" data-remove-user="${escapeHtml(u.username)}" style="color:var(--danger);font-weight:700;">Sí, quitar</button>
                       <button class="cancel-remove-btn" style="margin-left:8px;background:none;border:none;color:var(--ink-soft);text-decoration:underline;cursor:pointer;font-size:12px;">Cancelar</button>
                     </span>
-                  `:`<button class="del-btn remove-emp-btn" data-remove-user="${escapeHtml(u.username)}">Quitar empleado</button>`}
+                  `:`
+                    <span style="display:flex;gap:8px;align-items:center;">
+                      <button class="reset-pass-btn" data-reset-user="${escapeHtml(u.username)}" style="background:none;border:1px solid var(--teal-soft);color:var(--teal-soft);border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;">Resetear contraseña</button>
+                      <button class="del-btn remove-emp-btn" data-remove-user="${escapeHtml(u.username)}">Quitar empleado</button>
+                    </span>`}
                 </div>
               `).join('')}
             </div>
@@ -627,6 +647,18 @@ function renderAdminView(){
       };
     });
     root.querySelectorAll('.cancel-remove-btn').forEach(btn=>{ btn.onclick=()=>setState({confirmingRemove:null}); });
+    root.querySelectorAll('.reset-pass-btn').forEach(btn=>{
+      btn.onclick=()=>setState({confirmingReset: btn.dataset.resetUser, resetError:'', resetSuccess:''});
+    });
+    const confirmResetBtn = document.getElementById('confirmResetBtn');
+    if(confirmResetBtn){
+      confirmResetBtn.onclick=()=>{
+        const newPass = document.getElementById('newPassReset').value;
+        handleResetPassword(state.confirmingReset, newPass);
+      };
+    }
+    const cancelResetBtn = document.getElementById('cancelResetBtn');
+    if(cancelResetBtn){ cancelResetBtn.onclick=()=>setState({confirmingReset:null, resetError:''}); }
   }
 
   if(section==='registros'){
