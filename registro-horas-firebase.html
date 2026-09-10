@@ -138,6 +138,9 @@ let state = {
   confirmingReset: null,
   resetError: '',
   resetSuccess: '',
+  mustChangePass: false,
+  changePassError: '',
+  changePassSuccess: '',
   exporting: false,
   filterNombre: '',
   filterDesde: '',
@@ -240,6 +243,7 @@ async function handleLogin(username,pass){
   state.user={username,isAdmin:!!rec.isAdmin};
   state.entries=await fsGetEntries(username);
   state.authError='';
+  state.mustChangePass = !!(rec.debecambiarpass);
   render();
 }
 
@@ -322,9 +326,18 @@ async function handleResetPassword(username, newPass){
   const hash = await hashPass(newPass);
   const rec = await fsGetUser(username);
   if(!rec){ setState({resetError: 'No se encontró el usuario.', resetSuccess: ''}); return; }
-  await fsSetUser(username, Object.assign({}, rec, {passHash: hash}));
-  setState({confirmingReset: null, resetError: '', resetSuccess: `Contraseña de "${username}" actualizada correctamente.`});
+  await fsSetUser(username, Object.assign({}, rec, {passHash: hash, debecambiarpass: true}));
+  setState({confirmingReset: null, resetError: '', resetSuccess: `Contraseña de "${username}" actualizada correctamente. El usuario deberá cambiarla al ingresar.`});
   setTimeout(()=>setState({resetSuccess:''}), 3000);
+}
+
+async function handleChangeOwnPass(newPass, newPass2){
+  if(!newPass || newPass.length < 4){ setState({changePassError: 'La contraseña debe tener al menos 4 caracteres.'}); return; }
+  if(newPass !== newPass2){ setState({changePassError: 'Las contraseñas no coinciden.'}); return; }
+  const hash = await hashPass(newPass);
+  const rec = await fsGetUser(state.user.username);
+  await fsSetUser(state.user.username, Object.assign({}, rec, {passHash: hash, debecambiarpass: false}));
+  setState({mustChangePass: false, changePassError: '', changePassSuccess: ''});
 }
 
 async function handleRemoveEmployee(username){
@@ -382,7 +395,40 @@ function filterSummaryText(filtered,total){
 function render(){
   if(state.loading){ root.innerHTML='<div class="wrap"><div class="loading">Cargando…</div></div>'; return; }
   if(!state.user){ renderAuth(); return; }
+  if(state.mustChangePass){ renderChangePass(); return; }
   if(state.user.isAdmin){ renderAdminShell(); } else { renderEmployee(); }
+}
+
+function renderChangePass(){
+  root.innerHTML=`
+    <div class="wrap">
+      <header class="app">
+        <div class="brand"><span class="mark">RH</span><h1>Registro de Horas</h1></div>
+        <div class="who">${escapeHtml(state.user.username)}<br><button id="logoutBtn">Cerrar sesión</button></div>
+      </header>
+      <div class="card">
+        <h2>Cambio de contraseña requerido</h2>
+        <p class="subtitle">El administrador reseteó tu contraseña. Por seguridad, debés elegir una nueva antes de continuar.</p>
+        ${state.changePassError?`<div class="error">${escapeHtml(state.changePassError)}</div>`:''}
+        <div class="field">
+          <label>Nueva contraseña</label>
+          <input type="password" id="cpNew" placeholder="mínimo 4 caracteres">
+        </div>
+        <div class="field">
+          <label>Repetir nueva contraseña</label>
+          <input type="password" id="cpNew2" placeholder="repetí la contraseña">
+        </div>
+        <button class="primary" id="cpSubmit">Guardar nueva contraseña</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('logoutBtn').onclick=handleLogout;
+  document.getElementById('cpSubmit').onclick=()=>{
+    handleChangeOwnPass(document.getElementById('cpNew').value, document.getElementById('cpNew2').value);
+  };
+  root.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter') document.getElementById('cpSubmit').click(); });
+  });
 }
 
 function renderAuth(){
@@ -605,6 +651,17 @@ function renderAdminView(){
               `).join('')}
             </div>
           `:''}
+          ${state.resetError?`<div class="error" style="margin-top:12px;">${escapeHtml(state.resetError)}</div>`:''}
+          ${state.resetSuccess?`<div class="success" style="margin-top:12px;">${escapeHtml(state.resetSuccess)}</div>`:''}
+          ${state.confirmingReset?`
+          <div style="margin-top:16px;background:#F7F5F0;border:1px solid var(--line);border-radius:8px;padding:16px;">
+            <label style="margin-bottom:8px;">Nueva contraseña para <strong>${escapeHtml(state.confirmingReset)}</strong></label>
+            <input type="password" id="newPassReset" placeholder="mínimo 4 caracteres" style="margin-bottom:10px;width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-size:15px;">
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <button class="primary" id="confirmResetBtn" style="flex:1;">Guardar nueva contraseña</button>
+              <button id="cancelResetBtn" style="flex:1;padding:11px;background:transparent;color:var(--petrol);border:1px solid var(--line);border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;">Cancelar</button>
+            </div>
+          </div>`:''}
         </div>
       `:''}
 
